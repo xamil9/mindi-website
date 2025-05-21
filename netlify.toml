@@ -1,0 +1,12 @@
+# netlify.toml
+[build]
+  # relative to repo root
+  base    = "src"
+  # rely on your package.json script
+  command = "npm run build"
+  publish = "dist/client"
+
+[dev]
+  # for local `netlify dev`
+  command = "npm run dev"
+  port    = 3000
