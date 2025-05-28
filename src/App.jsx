@@ -23,148 +23,159 @@ function App() {
 
   useEffect(() => {
     const hostname = window.location.hostname;
+    console.log('🔍 DEBUG - Current hostname:', hostname);
+    console.log('🔍 DEBUG - Full URL:', window.location.href);
+    console.log('🔍 DEBUG - Hostname parts:', hostname.split('.'));
     console.log('Current hostname:', hostname);
 
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // Development mode
+      console.log('🔍 DEBUG - Setting routeType to main (localhost)');
       setRouteType('main');
       setLoading(false);
     } else {
-      const parts = hostname.split('.');
+      const parts = hostname.split('.'));
+  console.log('🔍 DEBUG - Hostname parts array:', parts);
 
-      if (parts.length >= 3) {
-        const potentialSubdomain = parts[0];
+  if (parts.length >= 3) {
+    const potentialSubdomain = parts[0];
+    console.log('🔍 DEBUG - Potential subdomain:', potentialSubdomain);
 
-        // Handle dashboard.mindi.tv specifically
-        if (potentialSubdomain === 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
-          setRouteType('dashboard');
-          setLoading(false);
-          return;
-        }
-
-        if (potentialSubdomain !== 'www' && potentialSubdomain !== 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
-          setSubdomain(potentialSubdomain);
-          setRouteType('filmmaker');
-          console.log('Detected filmmaker subdomain:', potentialSubdomain);
-          fetchFilmmakerData(potentialSubdomain);
-        } else {
-          setRouteType('main');
-          setLoading(false);
-        }
-      } else if (hostname === 'mindi.tv' || hostname === 'www.mindi.tv') {
-        setRouteType('main');
-        setLoading(false);
-      } else {
-        setRouteType('main');
-        setLoading(false);
-      }
+    // Handle dashboard.mindi.tv specifically
+    if (potentialSubdomain === 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
+      console.log('🔍 DEBUG - DASHBOARD DETECTED! Setting routeType to dashboard');
+      setRouteType('dashboard');
+      setLoading(false);
+      return;
     }
-  }, []);
 
-  // For development testing - you can visit localhost:5173?filmmaker=testname
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const testFilmmaker = urlParams.get('filmmaker');
-    if (testFilmmaker && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-      setSubdomain(testFilmmaker);
+    if (potentialSubdomain !== 'www' && potentialSubdomain !== 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
+      console.log('🔍 DEBUG - Filmmaker subdomain detected:', potentialSubdomain);
+      setSubdomain(potentialSubdomain);
       setRouteType('filmmaker');
-      fetchFilmmakerData(testFilmmaker);
-      console.log('Test filmmaker mode activated:', testFilmmaker);
-    }
-  }, []);
-
-  const fetchFilmmakerData = async (subdomainToFetch) => {
-    try {
-      setLoading(true);
-
-      // Query Firestore for user with matching subdomain
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('subdomain', '==', subdomainToFetch));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-
-        // Check if filmmaker page is published
-        if (userData.filmmakerProfile?.isPublished) {
-          setFilmmakerData({
-            id: userDoc.id,
-            ...userData
-          });
-        } else {
-          // Page not published yet
-          setFilmmakerData(null);
-        }
-      } else {
-        // Filmmaker not found
-        setFilmmakerData(null);
-      }
-    } catch (error) {
-      console.error('Error fetching filmmaker:', error);
-      setFilmmakerData(null);
-    } finally {
+      console.log('Detected filmmaker subdomain:', potentialSubdomain);
+      fetchFilmmakerData(potentialSubdomain);
+    } else {
+      console.log('🔍 DEBUG - Setting routeType to main (other)');
+      setRouteType('main');
       setLoading(false);
     }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+  } else if (hostname === 'mindi.tv' || hostname === 'www.mindi.tv') {
+    console.log('🔍 DEBUG - Setting routeType to main (mindi.tv)');
+    setRouteType('main');
+    setLoading(false);
+  } else {
+    console.log('🔍 DEBUG - Setting routeType to main (fallback)');
+    setRouteType('main');
+    setLoading(false);
   }
+}
+  }, []);
 
+// For development testing - you can visit localhost:5173?filmmaker=testname
+useEffect(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const testFilmmaker = urlParams.get('filmmaker');
+  if (testFilmmaker && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    setSubdomain(testFilmmaker);
+    setRouteType('filmmaker');
+    fetchFilmmakerData(testFilmmaker);
+    console.log('Test filmmaker mode activated:', testFilmmaker);
+  }
+}, []);
+
+const fetchFilmmakerData = async (subdomainToFetch) => {
+  try {
+    setLoading(true);
+
+    // Query Firestore for user with matching subdomain
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('subdomain', '==', subdomainToFetch));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
+
+      // Check if filmmaker page is published
+      if (userData.filmmakerProfile?.isPublished) {
+        setFilmmakerData({
+          id: userDoc.id,
+          ...userData
+        });
+      } else {
+        // Page not published yet
+        setFilmmakerData(null);
+      }
+    } else {
+      // Filmmaker not found
+      setFilmmakerData(null);
+    }
+  } catch (error) {
+    console.error('Error fetching filmmaker:', error);
+    setFilmmakerData(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
+if (loading) {
   return (
-    <Router>
-      {routeType === 'dashboard' ? (
-        // Dashboard subdomain - show protected dashboard
-        <ProtectedRoute>
-          <DashboardPage />
-        </ProtectedRoute>
-      ) : routeType === 'filmmaker' ? (
-        // Filmmaker subdomain - show their film page
-        filmmakerData ? (
-          <FilmmakerSubdomainPage
-            filmmaker={filmmakerData}
-            subdomain={subdomain}
-          />
-        ) : (
-          <FilmmakerNotFound subdomain={subdomain} />
-        )
-      ) : (
-        // Main site routes
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* Dashboard route for localhost development */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
-
-          {/* Development route to test filmmaker pages */}
-          <Route path="/test-filmmaker/:subdomain" element={
-            <div>Test filmmaker page for {window.location.pathname.split('/')[2]}</div>
-          } />
-
-          <Route path="*" element={
-            <div className="flex items-center justify-center min-h-screen">
-              <div className="text-center">
-                <h1 className="text-4xl font-bold text-gray-800 mb-4">404</h1>
-                <p className="text-gray-600 mb-4">Page not found</p>
-                <a href="/" className="text-blue-600 hover:underline">← Back to Mindi.tv</a>
-              </div>
-            </div>
-          } />
-        </Routes>
-      )}
-    </Router>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
   );
+}
+
+return (
+  <Router>
+    {routeType === 'dashboard' ? (
+      // Dashboard subdomain - show protected dashboard
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    ) : routeType === 'filmmaker' ? (
+      // Filmmaker subdomain - show their film page
+      filmmakerData ? (
+        <FilmmakerSubdomainPage
+          filmmaker={filmmakerData}
+          subdomain={subdomain}
+        />
+      ) : (
+        <FilmmakerNotFound subdomain={subdomain} />
+      )
+    ) : (
+      // Main site routes
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Dashboard route for localhost development */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Development route to test filmmaker pages */}
+        <Route path="/test-filmmaker/:subdomain" element={
+          <div>Test filmmaker page for {window.location.pathname.split('/')[2]}</div>
+        } />
+
+        <Route path="*" element={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-gray-800 mb-4">404</h1>
+              <p className="text-gray-600 mb-4">Page not found</p>
+              <a href="/" className="text-blue-600 hover:underline">← Back to Mindi.tv</a>
+            </div>
+          </div>
+        } />
+      </Routes>
+    )}
+  </Router>
+);
 }
 
 // Component to display filmmaker's page using your existing EnhancedFilmPage
