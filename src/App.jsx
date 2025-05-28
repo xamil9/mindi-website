@@ -32,15 +32,15 @@ function App() {
     } else {
       const parts = hostname.split('.');
 
-      // Handle dashboard.mindi.tv
-      if (hostname === 'dashboard.mindi.tv') {
-        setRouteType('dashboard');
-        setLoading(false);
-        return;
-      }
-
       if (parts.length >= 3) {
         const potentialSubdomain = parts[0];
+
+        // Handle dashboard.mindi.tv specifically
+        if (potentialSubdomain === 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
+          setRouteType('dashboard');
+          setLoading(false);
+          return;
+        }
 
         if (potentialSubdomain !== 'www' && potentialSubdomain !== 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
           setSubdomain(potentialSubdomain);
