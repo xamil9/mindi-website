@@ -1,0 +1,258 @@
+/* VideoLightbox.module.css */
+
+/* Overlay/Backdrop */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  cursor: pointer;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Lightbox Container */
+.lightbox {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  cursor: default;
+  animation: scaleIn 0.3s ease-in-out;
+}
+
+/* Video Container */
+.videoContainer {
+  position: relative;
+  width: 100%;
+  background-color: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Video Element */
+.video {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+/* Close Button */
+.closeButton {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.closeButton:active {
+  transform: scale(0.95);
+}
+
+/* Close Icon (X) */
+.closeIcon {
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+  font-family: Arial, sans-serif;
+}
+
+/* Title */
+.title {
+  color: #fff;
+  font-size: 24px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Description */
+.description {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin-top: 15px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Loading State */
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 18px;
+}
+
+/* Error State */
+.error {
+  color: #ff6b6b;
+  text-align: center;
+  padding: 20px;
+  font-size: 16px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .overlay {
+    padding: 10px;
+  }
+
+  .closeButton {
+    top: 10px;
+    right: 10px;
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+
+  .title {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .description {
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  .video {
+    max-height: 70vh;
+  }
+}
+
+/* Premium Badge */
+.premiumBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(16, 185, 129, 0.9);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 5;
+}
+
+/* Controls Overlay */
+.controlsOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.videoContainer:hover .controlsOverlay {
+  opacity: 1;
+}
+
+/* Thumbnail for video preview */
+.thumbnail {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.thumbnail:hover {
+  transform: scale(1.02);
+}
+
+.thumbnailOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.thumbnail:hover .thumbnailOverlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Play Button */
+.playButton {
+  width: 60px;
+  height: 60px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.thumbnail:hover .playButton {
+  transform: scale(1.1);
+}
+
+.playIcon {
+  width: 0;
+  height: 0;
+  border-left: 20px solid #000;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  margin-left: 4px;
+}

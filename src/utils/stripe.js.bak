@@ -1,0 +1,185 @@
+// src/utils/stripe.js - Improved implementation
+import { loadStripe } from '@stripe/stripe-js';
+import appConfig from '../config/appConfig';
+
+// Initialize Stripe with the publishable key from config
+export const stripePromise = loadStripe(appConfig.stripe.publishableKey);
+
+/**
+ * Create a payment intent with your backend
+ * 
+ * @param {number} amount - Amount in cents
+ * @param {string} currency - Currency code (default: usd)
+ * @param {Object} metadata - Additional metadata to attach to the payment
+ * @returns {Promise<Object>} - The payment intent object
+ */
+export const createPaymentIntent = async (amount, currency = 'usd', metadata = {}) => {
+    // For MVP, we're simulating a backend response
+    if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_MOCK_PAYMENTS === 'true') {
+        console.log('Using mock payment intent for development');
+        return mockPaymentIntent(amount, currency, metadata);
+    }
+
+    // For production, we'll call our serverless function
+    try {
+        const response = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                amount,
+                currency,
+                metadata
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to create payment intent');
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('Error creating payment intent:', error);
+        throw error;
+    }
+};
+
+/**
+ * Create a mock payment intent for development
+ * 
+ * @param {number} amount - Amount in cents
+ * @param {string} currency - Currency code
+ * @param {Object} metadata - Additional metadata
+ * @returns {Object} - Mock payment intent
+ */
+const mockPaymentIntent = (amount, currency, metadata) => {
+    // Simulate network delay
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                id: `mock_pi_${Date.now()}`,
+                clientSecret: `mock_secret_${Date.now()}`,
+                amount,
+                currency,
+                status: 'requires_payment_method',
+                metadata,
+                created: Date.now(),
+            });
+        }, 800);
+    });
+};
+
+/**
+ * Confirm a card payment
+ * 
+ * @param {Object} stripe - Stripe instance
+ * @param {string} clientSecret - Client secret from payment intent
+ * @param {Object} cardElement - Card element from Stripe Elements
+ * @param {Object} billingDetails - Customer billing details
+ * @returns {Promise<Object>} - Payment confirmation result
+ */
+export const confirmCardPayment = async (
+    stripe,
+    clientSecret,
+    cardElement,
+    billingDetails = {}
+) => {
+    if (!stripe || !cardElement) {
+        throw new Error('Stripe has not been properly initialized');
+    }
+
+    // For MVP, we're simulating a successful payment
+    if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_MOCK_PAYMENTS === 'true') {
+        console.log('Using mock payment confirmation for development');
+        return mockPaymentConfirmation();
+    }
+
+    // For production, we'll use the real Stripe API
+    return stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+            card: cardElement,
+            billing_details: billingDetails,
+        },
+    });
+};
+
+/**
+ * Create a mock payment confirmation for development
+ * 
+ * @returns {Promise<Object>} - Mock payment confirmation
+ */
+const mockPaymentConfirmation = () => {
+    // Simulate network delay
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                paymentIntent: {
+                    id: `mock_pi_${Date.now()}`,
+                    status: 'succeeded',
+                    amount: 500,
+                    currency: 'usd',
+                },
+                error: null,
+            });
+        }, 1500);
+    });
+};
+
+/**
+ * Handle a successful payment
+ * 
+ * @param {Object} paymentIntent - The payment intent object
+ * @param {Function} onSuccess - Callback for successful payment
+ * @param {Function} trackEvent - Function to track the payment event
+ */
+export const handlePaymentSuccess = (
+    paymentIntent,
+    onSuccess,
+    trackEvent = null
+) => {
+    console.log('Payment succeeded:', paymentIntent);
+
+    // Track the successful payment if tracking is available
+    if (trackEvent && typeof trackEvent === 'function') {
+        trackEvent('payment_succeeded', {
+            paymentId: paymentIntent.id,
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency,
+        });
+    }
+
+    // Call the success callback
+    if (typeof onSuccess === 'function') {
+        onSuccess(paymentIntent);
+    }
+};
+
+/**
+ * Handle a failed payment
+ * 
+ * @param {Object} error - The error object
+ * @param {Function} onError - Callback for failed payment
+ * @param {Function} trackEvent - Function to track the payment error
+ */
+export const handlePaymentError = (
+    error,
+    onError,
+    trackEvent = null
+) => {
+    console.error('Payment failed:', error);
+
+    // Track the payment error if tracking is available
+    if (trackEvent && typeof trackEvent === 'function') {
+        trackEvent('payment_failed', {
+            errorMessage: error.message,
+            errorType: error.type,
+        });
+    }
+
+    // Call the error callback
+    if (typeof onError === 'function') {
+        onError(error);
+    }
+};
