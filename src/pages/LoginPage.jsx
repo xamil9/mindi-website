@@ -1,7 +1,7 @@
 // mindi-website/src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../firebase-config'; // Use shared Firebase config
+import { auth } from '../firebase-config';
 
 const LoginPage = () => {
     const [formData, setFormData] = useState({
@@ -41,12 +41,35 @@ const LoginPage = () => {
 
         setLoading(true);
         try {
-            // Sign in with Firebase
-            await signInWithEmailAndPassword(auth, formData.email, formData.password);
+            console.log('🔍 Starting login process...');
 
-            // Success! Redirect to dashboard (your tubi-platform-3)
-            alert('Login successful!');
-            window.location.href = 'http://localhost:3000'; // Your tubi-platform-3 URL
+            // Sign in with Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+
+            console.log('🔍 Login successful:', userCredential.user.email);
+            console.log('🔍 User UID:', userCredential.user.uid);
+
+            // Get the ID token for cross-domain auth
+            console.log('🔍 Getting ID token...');
+            const idToken = await userCredential.user.getIdToken();
+            console.log('🔍 Got ID token:', idToken ? 'Success' : 'Failed');
+
+            // Store token in localStorage for cross-domain access
+            localStorage.setItem('firebaseAuthToken', idToken);
+            localStorage.setItem('firebaseUser', JSON.stringify({
+                uid: userCredential.user.uid,
+                email: userCredential.user.email,
+                displayName: userCredential.user.displayName
+            }));
+            console.log('🔍 Stored auth data in localStorage');
+
+            // Success! Redirect to dashboard with token
+            alert('Login successful! Redirecting to dashboard...');
+
+            // Redirect with token as URL parameter (temporary)
+            const redirectUrl = `https://dashboard.mindi.tv?token=${idToken}`;
+            console.log('🔍 Redirecting to:', redirectUrl);
+            window.location.href = redirectUrl;
 
         } catch (error) {
             console.error('Login error:', error);

@@ -1,20 +1,13 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import FilmmakerRegistrationModal from "../components/FilmmakerRegistrationModal"; // Add this import
+import Footer from "../components/Footer"; // Updated import
+import FilmmakerRegistrationModal from "../components/FilmmakerRegistrationModal";
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 
 export default function HomePage() {
   // Carousel state for cycling words
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const carouselWords = ["Content", "Audience", "Revenue"];
-
-  // Form state for contact form
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: ""
-  });
-  const [formStatus, setFormStatus] = useState(null);
 
   // Waitlist modal state
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
@@ -40,29 +33,6 @@ export default function HomePage() {
 
     return () => clearInterval(interval);
   }, [carouselWords.length]);
-
-  // Form handlers
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.id]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormStatus("submitting");
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setFormStatus("success");
-      setFormData({ name: "", email: "", message: "" });
-    } catch (error) {
-      console.error("Form submission error:", error);
-      setFormStatus("error");
-    }
-  };
 
   // Waitlist handlers
   const handleWaitlistSubmit = async (e) => {
@@ -717,179 +687,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            className="grid md:grid-cols-2 gap-12 items-center"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.5, margin: "-10%" }}
-            variants={staggerContainer}
-          >
-            <motion.div variants={fadeInLeft}>
-              <motion.h2
-                className="text-3xl font-bold text-blue-600 mb-4"
-                variants={staggerItem}
-              >
-                Get in Touch
-              </motion.h2>
-              <motion.p
-                className="text-lg text-gray-600 mb-8"
-                variants={staggerItem}
-              >
-                Ready to take control of your content distribution? Join our waitlist or contact us for more information.
-              </motion.p>
-
-              <motion.div
-                className="flex flex-col gap-4 mb-8"
-                variants={staggerItem}
-              >
-                {[
-                  {
-                    icon: (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    ),
-                    text: "info@mindi.com"
-                  },
-                  {
-                    icon: (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    ),
-                    text: "+1 (123) 456-7890"
-                  }
-                ].map((contact, index) => (
-                  <motion.div
-                    key={index}
-                    className="flex items-center gap-3"
-                    whileHover={{ x: 10 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  >
-                    <motion.div
-                      className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
-                      whileHover={{ scale: 1.1, rotate: 10 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        {contact.icon}
-                      </svg>
-                    </motion.div>
-                    <span className="text-gray-600">{contact.text}</span>
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              <motion.div
-                className="flex gap-4"
-                variants={staggerItem}
-              >
-                {[0, 1, 2, 3].map((index) => (
-                  <motion.a
-                    key={index}
-                    href="#"
-                    className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-orange-500 transition"
-                    whileHover={{ scale: 1.1, rotate: 10 }}
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                    </svg>
-                  </motion.a>
-                ))}
-              </motion.div>
-            </motion.div>
-
-            <motion.div variants={fadeInRight}>
-              <motion.div
-                className="bg-white p-8 rounded-xl shadow-lg"
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              >
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                  {[
-                    { id: "name", label: "Your Name", type: "text", placeholder: "John Doe" },
-                    { id: "email", label: "Email Address", type: "email", placeholder: "john@example.com" },
-                    { id: "message", label: "Message", type: "textarea", placeholder: "How can we help you?" }
-                  ].map((field, index) => (
-                    <motion.div
-                      key={field.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      viewport={{ once: true, amount: 0.8 }}
-                    >
-                      <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-1">
-                        {field.label}
-                      </label>
-                      {field.type === "textarea" ? (
-                        <motion.textarea
-                          id={field.id}
-                          rows="4"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          placeholder={field.placeholder}
-                          value={formData[field.id]}
-                          onChange={handleChange}
-                          required
-                          whileFocus={{ scale: 1.02 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      ) : (
-                        <motion.input
-                          type={field.type}
-                          id={field.id}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          placeholder={field.placeholder}
-                          value={formData[field.id]}
-                          onChange={handleChange}
-                          required
-                          whileFocus={{ scale: 1.02 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      )}
-                    </motion.div>
-                  ))}
-
-                  <motion.button
-                    type="submit"
-                    className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-orange-500 transition duration-300"
-                    disabled={formStatus === "submitting"}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    {formStatus === "submitting" ? "Sending..." : "Send Message"}
-                  </motion.button>
-
-                  {formStatus === "success" && (
-                    <motion.p
-                      className="text-green-600 text-center"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    >
-                      Your message has been sent successfully!
-                    </motion.p>
-                  )}
-                  {formStatus === "error" && (
-                    <motion.p
-                      className="text-red-600 text-center"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    >
-                      There was an error sending your message. Please try again.
-                    </motion.p>
-                  )}
-                </form>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
       {/* CTA Section - Update to include filmmaker option */}
-      <section className="py-16 px-6 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <section className="py-8 px-6 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-7xl mx-auto text-center">
           <motion.div
             variants={staggerContainer}
@@ -937,104 +736,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-100 py-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            className="grid md:grid-cols-4 gap-8"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.4, margin: "-5%" }}
-          >
-            <motion.div variants={staggerItem}>
-              <motion.div
-                className="flex items-center gap-2 mb-6"
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              >
-                <img src="/logo.png" alt="Mindi Logo" className="h-8" />
-                <span className="text-xl font-bold text-blue-600">Mindi</span>
-              </motion.div>
-              <motion.p
-                className="text-gray-600 mb-6"
-                variants={staggerItem}
-              >
-                Pioneering the future of media distribution with next-generation tools.
-              </motion.p>
-              <motion.div
-                className="flex gap-4"
-                variants={staggerItem}
-              >
-                {[0, 1, 2, 3].map((index) => (
-                  <motion.a
-                    key={index}
-                    href="#"
-                    className="text-gray-400 hover:text-blue-600 transition"
-                    whileHover={{ scale: 1.2, rotate: 10 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                    </svg>
-                  </motion.a>
-                ))}
-              </motion.div>
-            </motion.div>
-
-            {[
-              {
-                title: "Company",
-                links: ["About Us", "Careers", "Press", "Blog"]
-              },
-              {
-                title: "Product",
-                links: ["Features", "Pricing", "Case Studies", "Documentation"]
-              },
-              {
-                title: "Legal",
-                links: ["Privacy Policy", "Terms of Service", "Cookie Policy"]
-              }
-            ].map((section, index) => (
-              <motion.div key={section.title} variants={staggerItem}>
-                <h4 className="font-bold text-lg mb-4">{section.title}</h4>
-                <motion.ul
-                  className="space-y-2"
-                  variants={staggerContainer}
-                >
-                  {section.links.map((link, linkIndex) => (
-                    <motion.li
-                      key={link}
-                      variants={staggerItem}
-                    >
-                      <motion.a
-                        href="#"
-                        className="text-gray-600 hover:text-blue-600 transition"
-                        whileHover={{ x: 5 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                      >
-                        {link}
-                      </motion.a>
-                    </motion.li>
-                  ))}
-                </motion.ul>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          <motion.div
-            className="border-t border-gray-200 mt-12 pt-8 text-center"
-            variants={fadeInUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.8 }}
-          >
-            <p className="text-gray-600">
-              © {new Date().getFullYear()} Mindi. All rights reserved.
-            </p>
-          </motion.div>
-        </div>
-      </footer>
+      {/* Updated Footer Component */}
+      <Footer />
 
       {/* Waitlist Modal */}
       {showWaitlistModal && (

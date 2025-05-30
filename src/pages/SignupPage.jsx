@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { db, auth } from '../firebase-config'; // Updated import location
+import { db, auth } from '../firebase-config';
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -109,9 +109,11 @@ const SignupPage = () => {
         isPremium: false
       });
 
-      // Success! Redirect to dashboard (your tubi-platform-3)
+      // Success! Redirect to dashboard
       alert(`Account created! Your filmmaker page will be at ${formData.subdomain}.mindi.tv`);
-      window.location.href = 'http://localhost:3000'; // Your tubi-platform-3 URL
+
+      // Always redirect to dashboard.mindi.tv after signup
+      window.location.href = 'https://dashboard.mindi.tv';
 
     } catch (error) {
       console.error('Signup error:', error);

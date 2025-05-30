@@ -1,6 +1,6 @@
 // src/firebase-config.js
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
@@ -9,7 +9,7 @@ import { getFunctions, connectFunctionsEmulator, httpsCallable } from "firebase/
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCDw5I3uHdyWpAYA31rHltw1cfA--gguHs",
-  authDomain: "mindi-6650c.firebaseapp.com",
+  authDomain: "mindi.tv", // Changed from mindi-6650c.firebaseapp.com to mindi.tv
   projectId: "mindi-6650c",
   storageBucket: "mindi-6650c.firebasestorage.app",
   messagingSenderId: "346222667543",
@@ -29,6 +29,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+// Set auth persistence to work across subdomains
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('Auth persistence error:', error);
+});
+
 // Initialize Analytics (only in browser environment)
 let analytics = null;
 if (typeof window !== 'undefined') {
@@ -36,15 +41,11 @@ if (typeof window !== 'undefined') {
 }
 
 // Initialize Functions with region
-const functions = getFunctions(app, 'us-central1'); // Specify the region here
+const functions = getFunctions(app, 'us-central1');
 
-// Connect to emulators in development environment
-// Check if we're in development and emulators should be used
-const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const useEmulators = isDevelopment && false; // Set to true if you want to use emulators
-
-if (useEmulators) {
-  // Using localhost for emulator connections
+// Connect to emulators in development environment (disabled for production)
+const isDevelopment = window.location.hostname === 'localhost';
+if (isDevelopment && false) { // Set to true if you want to use emulators
   connectAuthEmulator(auth, 'http://localhost:9099');
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectStorageEmulator(storage, 'localhost', 9199);
@@ -53,8 +54,8 @@ if (useEmulators) {
 }
 
 // Firebase Functions API
-export const createPaymentIntent = httpsCallable(functions, 'createPayment'); // Updated to point to new function
-export const createPayment = httpsCallable(functions, 'createPayment'); // Added new export
+export const createPaymentIntent = httpsCallable(functions, 'createPayment');
+export const createPayment = httpsCallable(functions, 'createPayment');
 
 // Track analytics events
 export const trackEvent = (eventName, eventData) => {

@@ -1,151 +1,346 @@
-// mindi-website/src/App.jsx - Updated with Dashboard Route
+// mindi-website/src/App.jsx - Complete version with all features
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase-config';
+
+// Pages
 import HomePage from "./pages/HomePage";
 import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage"; // New dashboard page
-import ProtectedRoute from "./components/ProtectedRoute"; // Updated protected route
+import DashboardPage from "./pages/DashboardPage";
 
-// Import your existing EnhancedFilmPage from tubi-platform-3
+// Components
+import ProtectedRoute from "./components/ProtectedRoute";
 import EnhancedFilmPage from "./components/EnhancedFilmPage";
 
-// Import Firebase for filmmaker data lookup
+// Firebase
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 
 function App() {
-  const [routeType, setRouteType] = useState('main');
+  const [routeType, setRouteType] = useState('checking'); // 'checking', 'main', 'dashboard', 'filmmaker'
   const [subdomain, setSubdomain] = useState('');
   const [filmmakerData, setFilmmakerData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authState, setAuthState] = useState('checking'); // 'checking', 'loggedIn', 'loggedOut'
+  const [user, setUser] = useState(null);
 
   const db = getFirestore();
 
+  // Authentication monitoring
+  useEffect(() => {
+    let mounted = true;
+    let authHandled = false;
+
+    console.log('🔍 Starting auth check on dashboard');
+    console.log('🔍 Current URL:', window.location.href);
+
+    // Check for token in URL (from login redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    console.log('🔍 Token from URL:', tokenFromUrl ? 'Found' : 'Not found');
+
+    // Check localStorage
+    const storedToken = localStorage.getItem('firebaseAuthToken');
+    const storedUser = localStorage.getItem('firebaseUser');
+    console.log('🔍 Stored token:', storedToken ? 'Found' : 'Not found');
+    console.log('🔍 Stored user:', storedUser ? 'Found' : 'Not found');
+
+    // Handle token from URL
+    if (tokenFromUrl) {
+      console.log('🔍 Found token in URL, storing locally');
+      localStorage.setItem('firebaseAuthToken', tokenFromUrl);
+
+      // Decode the JWT token to get user info
+      try {
+        const payload = JSON.parse(atob(tokenFromUrl.split('.')[1]));
+        console.log('🔍 Decoded token payload:', payload);
+
+        const userData = {
+          uid: payload.user_id || payload.sub,
+          email: payload.email,
+          displayName: payload.name
+        };
+
+        localStorage.setItem('firebaseUser', JSON.stringify(userData));
+        console.log('🔍 Stored user data from token:', userData);
+
+        // Set auth state immediately
+        setUser({
+          uid: userData.uid,
+          email: userData.email,
+          displayName: userData.displayName,
+          getIdToken: async () => tokenFromUrl
+        });
+        setAuthState('loggedIn');
+        authHandled = true;
+
+      } catch (error) {
+        console.error('🔍 Error decoding token:', error);
+      }
+
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    // Handle stored token (no token in URL but token exists in storage)
+    else if (storedToken) {
+      console.log('🔍 No token in URL, but found stored token - decoding it');
+      try {
+        const payload = JSON.parse(atob(storedToken.split('.')[1]));
+        console.log('🔍 Decoded stored token payload:', payload);
+
+        const userData = {
+          uid: payload.user_id || payload.sub,
+          email: payload.email,
+          displayName: payload.name
+        };
+
+        localStorage.setItem('firebaseUser', JSON.stringify(userData));
+        console.log('🔍 Updated stored user data:', userData);
+
+        // Set auth state immediately
+        setUser({
+          uid: userData.uid,
+          email: userData.email,
+          displayName: userData.displayName,
+          getIdToken: async () => storedToken
+        });
+        setAuthState('loggedIn');
+        authHandled = true;
+
+      } catch (error) {
+        console.error('🔍 Error decoding stored token:', error);
+        // Clear invalid token
+        localStorage.removeItem('firebaseAuthToken');
+        localStorage.removeItem('firebaseUser');
+        setAuthState('loggedOut');
+        authHandled = true;
+      }
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!mounted || authHandled) return;
+
+      console.log('🔍 Auth state changed:', currentUser ? 'LOGGED IN' : 'LOGGED OUT');
+      console.log('🔍 User email:', currentUser?.email || 'None');
+
+      if (currentUser) {
+        setUser(currentUser);
+        setAuthState('loggedIn');
+      } else {
+        console.log('🔍 No Firebase auth and no stored token');
+        setUser(null);
+        setAuthState('loggedOut');
+      }
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  // Hostname detection and routing
   useEffect(() => {
     const hostname = window.location.hostname;
-    console.log('🔍 DEBUG - Current hostname:', hostname);
-    console.log('🔍 DEBUG - Full URL:', window.location.href);
-    console.log('🔍 DEBUG - Hostname parts:', hostname.split('.'));
     console.log('Current hostname:', hostname);
 
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // Development mode
-      console.log('🔍 DEBUG - Setting routeType to main (localhost)');
       setRouteType('main');
       setLoading(false);
-    } else {
-      const parts = hostname.split('.'));
-  console.log('🔍 DEBUG - Hostname parts array:', parts);
-
-  if (parts.length >= 3) {
-    const potentialSubdomain = parts[0];
-    console.log('🔍 DEBUG - Potential subdomain:', potentialSubdomain);
-
-    // Handle dashboard.mindi.tv specifically
-    if (potentialSubdomain === 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
-      console.log('🔍 DEBUG - DASHBOARD DETECTED! Setting routeType to dashboard');
+    } else if (hostname === 'dashboard.mindi.tv') {
+      // Dashboard subdomain
+      console.log('Dashboard detected!');
       setRouteType('dashboard');
       setLoading(false);
-      return;
-    }
-
-    if (potentialSubdomain !== 'www' && potentialSubdomain !== 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
-      console.log('🔍 DEBUG - Filmmaker subdomain detected:', potentialSubdomain);
-      setSubdomain(potentialSubdomain);
-      setRouteType('filmmaker');
-      console.log('Detected filmmaker subdomain:', potentialSubdomain);
-      fetchFilmmakerData(potentialSubdomain);
     } else {
-      console.log('🔍 DEBUG - Setting routeType to main (other)');
-      setRouteType('main');
-      setLoading(false);
+      const parts = hostname.split('.');
+
+      if (parts.length >= 3) {
+        const potentialSubdomain = parts[0];
+
+        if (potentialSubdomain !== 'www' && potentialSubdomain !== 'dashboard' && parts[1] === 'mindi' && parts[2] === 'tv') {
+          setSubdomain(potentialSubdomain);
+          setRouteType('filmmaker');
+          console.log('Detected filmmaker subdomain:', potentialSubdomain);
+          fetchFilmmakerData(potentialSubdomain);
+        } else {
+          setRouteType('main');
+          setLoading(false);
+        }
+      } else if (hostname === 'mindi.tv' || hostname === 'www.mindi.tv') {
+        setRouteType('main');
+        setLoading(false);
+      } else {
+        setRouteType('main');
+        setLoading(false);
+      }
     }
-  } else if (hostname === 'mindi.tv' || hostname === 'www.mindi.tv') {
-    console.log('🔍 DEBUG - Setting routeType to main (mindi.tv)');
-    setRouteType('main');
-    setLoading(false);
-  } else {
-    console.log('🔍 DEBUG - Setting routeType to main (fallback)');
-    setRouteType('main');
-    setLoading(false);
-  }
-}
   }, []);
 
-// For development testing - you can visit localhost:5173?filmmaker=testname
-useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const testFilmmaker = urlParams.get('filmmaker');
-  if (testFilmmaker && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    setSubdomain(testFilmmaker);
-    setRouteType('filmmaker');
-    fetchFilmmakerData(testFilmmaker);
-    console.log('Test filmmaker mode activated:', testFilmmaker);
-  }
-}, []);
+  // For development testing - filmmaker parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const testFilmmaker = urlParams.get('filmmaker');
+    if (testFilmmaker && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      setSubdomain(testFilmmaker);
+      setRouteType('filmmaker');
+      fetchFilmmakerData(testFilmmaker);
+      console.log('Test filmmaker mode activated:', testFilmmaker);
+    }
+  }, []);
 
-const fetchFilmmakerData = async (subdomainToFetch) => {
-  try {
-    setLoading(true);
+  const fetchFilmmakerData = async (subdomainToFetch) => {
+    try {
+      setLoading(true);
 
-    // Query Firestore for user with matching subdomain
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('subdomain', '==', subdomainToFetch));
-    const querySnapshot = await getDocs(q);
+      // Query Firestore for user with matching subdomain
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('subdomain', '==', subdomainToFetch));
+      const querySnapshot = await getDocs(q);
 
-    if (!querySnapshot.empty) {
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data();
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
 
-      // Check if filmmaker page is published
-      if (userData.filmmakerProfile?.isPublished) {
-        setFilmmakerData({
-          id: userDoc.id,
-          ...userData
-        });
+        // Check if filmmaker page is published
+        if (userData.filmmakerProfile?.isPublished) {
+          setFilmmakerData({
+            id: userDoc.id,
+            ...userData
+          });
+        } else {
+          // Page not published yet
+          setFilmmakerData(null);
+        }
       } else {
-        // Page not published yet
+        // Filmmaker not found
         setFilmmakerData(null);
       }
-    } else {
-      // Filmmaker not found
+    } catch (error) {
+      console.error('Error fetching filmmaker:', error);
       setFilmmakerData(null);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching filmmaker:', error);
-    setFilmmakerData(null);
-  } finally {
-    setLoading(false);
+  };
+
+  // Loading state - show while checking route type OR auth state
+  if (loading || routeType === 'checking') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Arial'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '10px' }}>🔄</div>
+          <div>Loading...</div>
+          <div style={{ fontSize: '12px', marginTop: '10px', color: '#666' }}>
+            Route: {routeType} | Auth: {authState}
+          </div>
+        </div>
+      </div>
+    );
   }
-};
 
-if (loading) {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  );
-}
+  // Dashboard subdomain - protected route
+  if (routeType === 'dashboard') {
+    console.log('🔍 Dashboard route - Auth state:', authState, 'User:', user?.email);
 
-return (
-  <Router>
-    {routeType === 'dashboard' ? (
-      // Dashboard subdomain - show protected dashboard
-      <ProtectedRoute>
-        <DashboardPage />
-      </ProtectedRoute>
-    ) : routeType === 'filmmaker' ? (
-      // Filmmaker subdomain - show their film page
-      filmmakerData ? (
-        <FilmmakerSubdomainPage
-          filmmaker={filmmakerData}
-          subdomain={subdomain}
-        />
-      ) : (
-        <FilmmakerNotFound subdomain={subdomain} />
-      )
+    // Still checking authentication
+    if (authState === 'checking') {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Arial'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '10px' }}>🔄</div>
+            <div>Checking authentication...</div>
+          </div>
+        </div>
+      );
+    }
+
+    // Not logged in - show login prompt
+    if (authState === 'loggedOut' || !user) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Arial'
+        }}>
+          <div style={{ textAlign: 'center', maxWidth: '400px', padding: '20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+            <h1>Authentication Required</h1>
+            <p>You need to be logged in to access the dashboard.</p>
+            <div style={{ fontSize: '12px', color: '#666', marginBottom: '20px' }}>
+              Debug: Auth state = {authState}, User = {user ? 'exists' : 'null'}
+            </div>
+            <div style={{ marginTop: '20px' }}>
+              <a
+                href="https://mindi.tv/login"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 24px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: '6px',
+                  margin: '5px'
+                }}
+              >
+                Login
+              </a>
+              <a
+                href="https://mindi.tv/signup"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 24px',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: '6px',
+                  margin: '5px'
+                }}
+              >
+                Sign Up
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Logged in - show dashboard (no Router wrapper needed for dashboard)
+    console.log('🔍 Showing dashboard for user:', user.email);
+    return <DashboardPage />;
+  }
+
+  // Filmmaker subdomain
+  if (routeType === 'filmmaker') {
+    return filmmakerData ? (
+      <FilmmakerSubdomainPage
+        filmmaker={filmmakerData}
+        subdomain={subdomain}
+      />
     ) : (
-      // Main site routes
+      <FilmmakerNotFound subdomain={subdomain} />
+    );
+  }
+
+  // Main site routes
+  return (
+    <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -173,9 +368,8 @@ return (
           </div>
         } />
       </Routes>
-    )}
-  </Router>
-);
+    </Router>
+  );
 }
 
 // Component to display filmmaker's page using your existing EnhancedFilmPage
@@ -225,7 +419,6 @@ const FilmmakerSubdomainPage = ({ filmmaker, subdomain }) => {
         }}
         // Enable dashboard access for film owners
         onDashboardClick={(filmId) => {
-          // Redirect to dashboard.mindi.tv
           if (window.location.hostname === 'localhost') {
             window.location.href = '/dashboard';
           } else {
